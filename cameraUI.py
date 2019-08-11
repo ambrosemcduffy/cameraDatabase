@@ -1,4 +1,5 @@
 import json
+import os
 from qtpy import QtWidgets, QtGui, QtCore
 
 
@@ -8,7 +9,7 @@ class CameraLibraryUI(QtWidgets.QDialog):
         super(CameraLibraryUI, self).__init__()
         self.data = self.loadData()
         self.setWindowTitle("Camera Libray UI")
-        self.setFixedSize(500, 100)
+        self.setFixedSize(510, 100)
         self.setWindowIcon(QtGui.QIcon("data/snip.png"))
         self.buildUI()
 
@@ -30,14 +31,22 @@ class CameraLibraryUI(QtWidgets.QDialog):
 
         self.resField = QtWidgets.QComboBox()
         self.resField.currentIndexChanged.connect(self.populateTextField)
+        self.resField.setFixedWidth(150)
+
+        self.checkBoxField = QtWidgets.QCheckBox()
+        self.label = QtWidgets.QLabel("Anamorphic")
+        self.label.setFixedWidth(100)
 
         camLayout.addWidget(self.cameraField)
         camLayout.addWidget(self.resField)
+        camLayout.addWidget(self.checkBoxField)
+        camLayout.addWidget(self.label)
 
         self.fbField = QtWidgets.QLineEdit(self)
         self.fbField.setAlignment(QtCore.Qt.AlignCenter)
         self.fbField.move(24, 65)
         self.fbField.resize(110, 30)
+
         fbLayout.addWidget(self.fbField)
 
     def loadData(self):
@@ -46,9 +55,13 @@ class CameraLibraryUI(QtWidgets.QDialog):
         from a json file
         and return a dictionary of the data
         '''
-        with open("data/data.json", "r") as f:
-            data = json.load(f)
-        return data
+        if os.path.exists("data/data.json"):
+            with open("data/data.json", "r") as f:
+                data = json.load(f)
+            return data
+        else:
+            print("data/data.json director does not exist")
+            return None
 
     def populateRes_Field(self):
         '''
@@ -56,8 +69,8 @@ class CameraLibraryUI(QtWidgets.QDialog):
         '''
         self.resField.clear()
         self.camName = self.cameraField.currentText()
-        for i, k in self.data[self.camName][0]:
-            resolution = "{} x {}".format(i[0], i[1])
+        for res, _ in self.data[self.camName][0]:
+            resolution = "{} x {}".format(res[0], res[1])
             self.resField.addItem(resolution)
 
     def populateTextField(self):
@@ -67,8 +80,14 @@ class CameraLibraryUI(QtWidgets.QDialog):
         info = self.data[self.camName][0]
         index = self.resField.currentIndex()
         fb = info[index][1]
-        filmback = "{} x {} (in)".format(fb[0], fb[1])
-        self.fbField.setText(filmback)
+        if self.checkBoxField.isChecked() is True:
+            filmback = "{} x {} (in)".format(
+                    str(float(fb[0])*2),
+                    str(float(fb[1])*2))
+            self.fbField.setText(filmback)
+        else:
+            filmback = "{} x {} (in)".format(fb[0], fb[1])
+            self.fbField.setText(filmback)
 
 
 def showUI():
